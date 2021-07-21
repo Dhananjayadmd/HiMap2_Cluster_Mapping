@@ -148,7 +148,7 @@ def main(dfg_xml, no_clusters, affinity_, no_init):
     
     CLUS_DFG = nx.DiGraph()
     for i in range(0, int(no_clusters)):
-        CLUS_DFG.add_node(i, label = 0, row = -1, color=colordict[i])
+        CLUS_DFG.add_node(i, label = 0, color=colordict[i])
         
     for i in range(0, DFG.number_of_nodes()): 
         CLUS_DFG.nodes[nodeid_clusterlabel_dict[node_list[i]]]["label"] = CLUS_DFG.nodes[nodeid_clusterlabel_dict[node_list[i]]]["label"] + 1

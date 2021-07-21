@@ -40,8 +40,8 @@ from networkx.classes.function import neighbors
 try:
     clus_dfg = nx.read_gexf('inter_cluster.gexf')
     
-    num_of_columns = 4
-    num_of_rows = 4
+    num_of_columns = 4#4#5#4
+    num_of_rows = 3#4#2#4
     row  = 0
     number_of_cgra_clusters = num_of_columns*num_of_rows
     #clus_dfg = nx.read_gexf('inter_cluster_nettle.gexf')
@@ -116,13 +116,14 @@ try:
                 print("Node ID:",node_id)
                 if assigned_row[node_id] == -1:
                     index_list = []
-                    index_list.append(nodes)
+                    #index_list.append(nodes)
                     degree = 0
                     for neighbors in clus_dfg.neighbors(nodes):
                         #print(neighbors)
                         neighbor_id = int(neighbors)
                         if assigned_row[neighbor_id] == -1 :
                             index_list.append(neighbors)
+                            index_list.append(nodes)
                             degree = degree + 1
                     #print(index_list)
                     for i in range(0,len(index_list)):
@@ -135,9 +136,9 @@ try:
                     #print(m.getVarByName("v6"))
                     #print(m.getVarByName("v9"))
                     if degree > 1:
-                        print("Constraint 1:", sum(m.getVarByName(str("v"+str(i))) for i in index_list) <= C1 + n*m.getVarByName(str("v"+str(node_id))) )
+                        print("Constraint 12:", sum(m.getVarByName(str("v"+str(i))) for i in index_list) <= C1 + n*m.getVarByName(str("v"+str(node_id))) )
                         m.addConstr(sum(m.getVarByName(str("v"+str(i))) for i in index_list) <= C1 + n*m.getVarByName(str("v"+str(node_id))) )
-                        print("Constraint 2:", sum(m.getVarByName(str("v"+str(i))) for i in index_list) >= 2*degree - C2 - n*(1-m.getVarByName(str("v"+str(node_id)))  ))
+                        print("Constraint 13:", sum(m.getVarByName(str("v"+str(i))) for i in index_list) >= 2*degree - C2 - n*(1-m.getVarByName(str("v"+str(node_id)))  ))
                         m.addConstr(sum(m.getVarByName(str("v"+str(i))) for i in index_list) >= 2*degree - C2 - n*(1-m.getVarByName(str("v"+str(node_id)))  ))
                         num_of_constr = num_of_constr+2
                         print("")
@@ -192,7 +193,20 @@ try:
     #for i in range(0,num_nodes*num_of_columns):
     #    print((i%num_of_columns+1)) 
     #    print(v[i])
-    objective = gp.quicksum([v[i]*(i%num_of_columns+1) for i in range(0,num_nodes*num_of_columns)]) 
+    
+    #14 maximize number of unexecuted column
+    #objective = gp.quicksum([v[i]*(i%num_of_columns+1) for i in range(0,num_nodes*num_of_columns)]) 
+   # print(objective)
+    #m.setObjective(objective , GRB.MINIMIZE)
+    
+    # objective to minimize edge distance
+    objective = gp.LinExpr()
+    for edges in clus_dfg.edges:
+        weight = int(clus_dfg[edges[0]][edges[1]]["label"])
+        for c in range(1,num_of_columns+1):
+            #print(m.getVarByName(str("v"+str(edges[0])+str(c))) == m.getVarByName(str("v"+str(edges[1])+str(c))))
+            objective = objective + weight*c*(m.getVarByName(str("v"+str(edges[0])+str(c))) - m.getVarByName(str("v"+str(edges[1])+str(c))))
+    
     print(objective)
     m.setObjective(objective , GRB.MINIMIZE)
     
@@ -221,7 +235,7 @@ try:
         if weight > 4:
             for c in range(1,num_of_columns+1):
                 print(m.getVarByName(str("v"+str(edges[0])+str(c))) == m.getVarByName(str("v"+str(edges[1])+str(c))))
-                #m.addConstr(m.getVarByName(str("v"+str(edges[0])+str(c))) == m.getVarByName(str("v"+str(edges[1])+str(c))))
+                m.addConstr(m.getVarByName(str("v"+str(edges[0])+str(c))) == m.getVarByName(str("v"+str(edges[1])+str(c))))
         #print(sum( gp.abs_(c*m.getVarByName(str("v"+str(edges[0])+str(c))) - c*m.getVarByName(str("v"+str(edges[1])+str(c)))) for c in range(1,(num_of_columns+1) )) == 0)
     # Optimize model
     m.optimize()
@@ -235,7 +249,7 @@ try:
     #for var in m.getVars():
         #print('%s %g' % (var.varName, var.x))
         
-    
+    print('Obj: %g' % m.objVal)
     for i in range(0,num_nodes):
         for c in range(1,num_of_columns+1):
             print(m.getVarByName(str("v"+str(i)+str(c))), m.getVarByName(str("v"+str(i)+str(c))).x)
