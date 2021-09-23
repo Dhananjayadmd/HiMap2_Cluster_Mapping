@@ -140,6 +140,12 @@ def main(dfg_xml, no_clusters, affinity_, no_init):
                 f.write(str(edges[0]) + '\t' + str(edges[1]) + '\n')
                 inter_cluster_edges = inter_cluster_edges + 1
     f.close()
+    
+    
+    with open("all_edges.txt", "w") as f:
+        for edges in DFG.edges:
+            f.write(str(edges[0]) + '\t' + str(edges[1]) + '\n')
+    f.close()
     #print("Total edges:",total_edges)       
     #print("Inter cluster edges:",inter_cluster_edges)
     #print("Total nodes:", DFG.number_of_nodes())
