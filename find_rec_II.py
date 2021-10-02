@@ -48,6 +48,8 @@ def main(dfg_xml):
     #print(root.attrib)
     
     DFG = nx.DiGraph()
+    backedge_list = []
+    recII = 0
     
     for nodes in root:
         #print(nodes.tag, nodes.attrib)
@@ -57,15 +59,64 @@ def main(dfg_xml):
             if nodeelm.tag == 'Outputs':
                 for outputs in nodeelm:
                     #print(outputs.tag, outputs.attrib)
-                    DFG.add_edge(nodes.attrib["idx"], outputs.attrib["idx"])
+                    
+                    if outputs.attrib["nextiter"] == "1":
+                        #print('backedge')
+                        #print(nodes.attrib["idx"], outputs.attrib["idx"])
+                        e = (nodes.attrib["idx"], outputs.attrib["idx"])
+                        backedge_list.append(e)
+                    else:
+                        DFG.add_edge(nodes.attrib["idx"], outputs.attrib["idx"])
+            if nodeelm.tag == 'RecParents':
+                for recparents in nodeelm:
+                    # print('backedge rec')
+                    # print(nodes.attrib["idx"], recparents.attrib["idx"])
+                    e = (nodes.attrib["idx"], recparents.attrib["idx"])
+                    backedge_list.append(e)
+                    
+    recII_outcome = "recurrence_II_calc.txt"
+    with open(recII_outcome, "w") as f:                    
+        for e in backedge_list:
+            f.write('Adding Backedge\n')
+            f.write(str(e) + '\n')
+            print('Adding Backedge')
+            print(e)
+            DFG.add_edge(e[0],e[1])
+            cycle_list = list(nx.simple_cycles(DFG))
+            DFG.remove_edge(e[0],e[1])
+            print('Cycle list')
+            f.write('Cycle list\n')
+            for l in cycle_list:
+                print(l)
+                f.write(str(l)+'\n')
+            print('Cycle len')
+            f.write('Cycle len\n')
+            for l in cycle_list:
+                if recII < len(l):
+                    recII = len(l)
+                print(len(l))
+                f.write(str(len(l))+'\n')
+            
+        print('Recurrence II:')
+        print(recII)    
+        f.write('Recurrence II:')
+        f.write(str(recII))
+    f.close()
+    
 
-    np.random.seed(1)
+
+
 
     print(DFG.number_of_nodes())
-    
-    print('simple cycles')
-    
-    print(list(nx.simple_cycles(DFG)))
+
+    #
+    # cycle_list = list(nx.simple_cycles(DFG))
+    #
+    # for l in cycle_list:
+    #     print(l)
+    #
+    # for l in cycle_list:
+    #     print(len(l))
     
     
     #adj_mat_dfg = nx.to_numpy_matrix(DFG)
