@@ -14,11 +14,14 @@ import networkx as nx
 from sklearn.cluster import SpectralClustering
 from sklearn import metrics
 import matplotlib.pyplot as plt
+from networkx.algorithms.components.connected import connected_components
 from networkx.drawing.nx_pydot import write_dot
 from networkx.drawing.nx_pydot import to_pydot
 from sklearn.cluster._agglomerative import AgglomerativeClustering
 import pydot
+from queue import Queue
 from _ast import If
+from networkx.algorithms.components.connected import connected_components
 ############################################
 # Directory Structure:
 # Morpher Home:
@@ -29,7 +32,30 @@ from _ast import If
 
 # Build all three tools before running this script
 
-def main(dfg_xml, no_clusters, affinity_, no_init):
+
+#https://stackoverflow.com/questions/4842613/merge-lists-that-share-common-elements
+def to_graph(l):
+    G = nx.Graph()
+    for part in l:
+        # each sublist is a bunch of nodes
+        G.add_nodes_from(part)
+        # it also imlies a number of edges:
+        G.add_edges_from(to_edges(part))
+    return G
+
+def to_edges(l):
+    """ 
+        treat `l` as a Graph and returns it's edges 
+        to_edges(['a','b','c','d']) -> [(a,b), (b,c),(c,d)]
+    """
+    it = iter(l)
+    last = next(it)
+
+    for current in it:
+        yield last, current
+        last = current  
+        
+def main(dfg_xml, no_clusters, affinity_, no_init,number_of_cluster_rows_in_cgra):
     #xml_name = '/home/dmd/Workplace/HiMap2/Morpher_DFG_Generator/applications/aes/hycube_compilation/encrypt_INNERMOST_LN1_PartPred_DFG_without_clustering_1.xml'
     #xml_name = '//home/dmd/Workplace/Morphor/github_ecolab_repos/Morpher_DFG_Generator/applications/madgwick_fp_v2/MadgwickAHRSupdateIMU_INNERMOST_LN1_PartPred_DFG_1.xml'
     #xml_name = '/home/dmd/Workplace/HiMap2/Morpher_DFG_Generator/applications/edn/jpegdct_POST_LN111_PartPred_DFG_1.xml'
@@ -48,7 +74,8 @@ def main(dfg_xml, no_clusters, affinity_, no_init):
     #print(root.attrib)
     
     DFG = nx.DiGraph()
-    
+    backedge_list = []
+
     for nodes in root:
         #print(nodes.tag, nodes.attrib)
         #print(nodes.attrib["idx"])
@@ -58,6 +85,16 @@ def main(dfg_xml, no_clusters, affinity_, no_init):
                 for outputs in nodeelm:
                     #print(outputs.tag, outputs.attrib)
                     DFG.add_edge(nodes.attrib["idx"], outputs.attrib["idx"])
+                    if outputs.attrib["nextiter"] == "1":
+                        e = (nodes.attrib["idx"], outputs.attrib["idx"])
+                        backedge_list.append(e)
+            
+            if nodeelm.tag == 'RecParents':
+                for recparents in nodeelm:
+                    # print('backedge rec')
+                    # print(nodes.attrib["idx"], recparents.attrib["idx"])
+                    e = (nodes.attrib["idx"], recparents.attrib["idx"])
+                    backedge_list.append(e)
 
     np.random.seed(1)
 
@@ -67,6 +104,7 @@ def main(dfg_xml, no_clusters, affinity_, no_init):
     # Cluster
     print('no_clusters affinity no_init')
     print(no_clusters, affinity_, no_init)
+    print('spectral dfg clustering')
     scdfg = SpectralClustering(int(no_clusters), affinity=str(affinity_), n_init=int(no_init))
     #scdfg = SpectralClustering(7, affinity='precomputed', n_init=100)#madgwick
     #scdfg = SpectralClustering(7, affinity='precomputed', n_init=100)//aes
@@ -74,22 +112,96 @@ def main(dfg_xml, no_clusters, affinity_, no_init):
     #https://stackoverflow.com/questions/46258657/spectral-clustering-a-graph-in-python
     #https://ptrckprry.com/course/ssd/lecture/community.html
     scdfg.fit(adj_mat_dfg)
-    
-    print('spectral dfg clustering')
-    #print(scdfg.labels_)
-    
     node_list = list(DFG)
     nodeid_clusterlabel_dict = {}
+    cluster_ids = []
+    cluster_id_node_count = []
+    for i in range(0, DFG.number_of_nodes()):
+        nodeid_clusterlabel_dict[node_list[i]] = scdfg.labels_[i]
+        cluster_ids.append(scdfg.labels_[i])
+    for c in range(0,int(no_clusters)):
+            print(str(c) + ':' + str(cluster_ids.count(c)))
+            cluster_id_node_count.insert(c, cluster_ids.count(c))
+    #print(scdfg.labels_)
+    print('determine recurrence cycles')
+    backedge_recset_list = []
+             
+    for e in backedge_list:
+        be_parent = e[0]
+        print('Backedge')
+        print(e)
+        print()
+        q = Queue()
+        rec_set = set()
+        q.put(be_parent)
+        rec_set.add(be_parent)
+        while (not q.empty()):
+            node = q.get()
+            for parent in DFG.predecessors(node):
+                if not ((parent,node) in backedge_list):#not a backedge
+                    #print(parent)
+                    q.put(parent)
+                    rec_set.add(parent)
+        backedge_recset_list.append(rec_set)
+        #print(rec_set)
+    for recset in backedge_recset_list:
+        print(recset)
+    print(backedge_recset_list)
+    
+    #merge the recurrence sets which share common nodes
+    G = to_graph(backedge_recset_list)
+    cluster_ids = []
+    print('Connected components')
+    cc = connected_components(G)
+    
+    print('Modify the cluster id of nodes in recurrence cycles')
+    
+    #change the cluster of each merged rec set
+    for comp in cc:
+        print('Connected component: (Merged Rec Sets)')
+        print(comp)
+        max_count = 0
+        max_count_cluster = -1
+        cluster_ids = []
+        for node in comp:
+            cluster_ids.append(nodeid_clusterlabel_dict[node])#
+        print('Cluster: Count')
+        for c in range(0,int(no_clusters)):
+            print(str(c) + ':' + str(cluster_ids.count(c)))
+            if max_count < cluster_ids.count(c):
+                if len(comp)+cluster_id_node_count[c] < DFG.number_of_nodes()/int(number_of_cluster_rows_in_cgra):
+                    max_count =cluster_ids.count(c)
+                    max_count_cluster = c
+        print('Max count cluster:'+str(max_count_cluster))
+        print('Modify the cluster id of recurrence sets:')
+        for node in comp:
+            nodeid_clusterlabel_dict[node] = max_count_cluster
+            print('Modified Node:'+str(node)+',cls:'+str(max_count_cluster))
+            
+        
+    print()
+    #print(cc)
+    print()
+            
+            
+        
+    
+    
+    
+    
+    
     clustering_outcome = "clustering_outcome.txt"
     i=0
     with open(clustering_outcome, "w") as f:
         for i in range(0, DFG.number_of_nodes()):
             #node_id = nodes.attrib["idx"]
             #print(node_list[i],scdfg.labels_[i]) 
-            f.write(str(node_list[i]) + '\t' + str(scdfg.labels_[i]) + '\n')
-            nodeid_clusterlabel_dict[node_list[i]] = scdfg.labels_[i]
-            i=i+1
+            f.write(str(node_list[i]) + '\t' + str(nodeid_clusterlabel_dict[node_list[i]]) + '\n')
+            #i=i+1
     f.close()
+    
+    
+    
     #pydot graph
     #https://pypi.org/project/pydot/
     pydot_dfg = pydot.Dot('DFG',graph_type='graph')
@@ -104,7 +216,9 @@ def main(dfg_xml, no_clusters, affinity_, no_init):
         7:'brown',
         8:'magenta',
         9:'rose',
-        10:'azure'
+        10:'azure',
+        11:'black',
+        12:'white'
         
     }
     i=0
@@ -113,7 +227,8 @@ def main(dfg_xml, no_clusters, affinity_, no_init):
     #print("adding nodes to colored dot dfg")
     for nodes in DFG.nodes:
         #print(colordict[scdfg.labels_[i]])
-        pydot_dfg.add_node(pydot.Node(nodes, fontcolor="white", style="filled", fillcolor=colordict[scdfg.labels_[i]]))
+        #pydot_dfg.add_node(pydot.Node(nodes, fontcolor="white", style="filled", fillcolor=colordict[scdfg.labels_[i]]))
+        pydot_dfg.add_node(pydot.Node(nodes, fontcolor="white", style="filled", fillcolor=colordict[nodeid_clusterlabel_dict[node_list[i]]]))
         i = i+1
     
     
@@ -204,4 +319,5 @@ if __name__ == '__main__':
     no_clusters = sys.argv[2]
     affinity_ = sys.argv[3]
     no_init = sys.argv[4]
-    main(dfg_xml, no_clusters, affinity_, no_init)
+    number_of_cluster_rows_in_cgra = sys.argv[5]
+    main(dfg_xml, no_clusters, affinity_, no_init,number_of_cluster_rows_in_cgra)
