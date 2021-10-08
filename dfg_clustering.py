@@ -169,9 +169,16 @@ def main(dfg_xml, no_clusters, affinity_, no_init,number_of_cluster_rows_in_cgra
         for c in range(0,int(no_clusters)):
             print(str(c) + ':' + str(cluster_ids.count(c)))
             if max_count < cluster_ids.count(c):
-                if len(comp)+cluster_id_node_count[c] < DFG.number_of_nodes()/int(number_of_cluster_rows_in_cgra):
-                    max_count =cluster_ids.count(c)
-                    max_count_cluster = c
+                #if len(comp)+cluster_id_node_count[c] < DFG.number_of_nodes()/int(number_of_cluster_rows_in_cgra):
+                max_count =cluster_ids.count(c)
+                max_count_cluster = c
+        # if max_count_cluster == -1:# number of nodes in merged rec cycles are higher than the number of nodes in row
+        #     max_count =0
+        #     for c in range(0,int(no_clusters)):
+        #         if max_count < cluster_ids.count(c):
+        #             max_count =cluster_ids.count(c)
+        #             max_count_cluster = c
+
         print('Max count cluster:'+str(max_count_cluster))
         print('Modify the cluster id of recurrence sets:')
         for node in comp:
