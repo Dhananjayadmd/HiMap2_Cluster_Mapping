@@ -181,9 +181,9 @@ def main(dfg_xml, no_clusters, affinity_, no_init,number_of_cluster_rows_in_cgra
 
         print('Max count cluster:'+str(max_count_cluster))
         print('Modify the cluster id of recurrence sets:')
-        for node in comp:
-            nodeid_clusterlabel_dict[node] = max_count_cluster
-            print('Modified Node:'+str(node)+',cls:'+str(max_count_cluster))
+        #for node in comp:
+            #nodeid_clusterlabel_dict[node] = max_count_cluster
+            #print('Modified Node:'+str(node)+',cls:'+str(max_count_cluster))
             
         
     print()
