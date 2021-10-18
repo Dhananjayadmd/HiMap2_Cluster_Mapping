@@ -94,9 +94,13 @@ def main(C1_init_, C2_init_, cgra_cluster_r, cgra_cluster_c):
             6:'orange',
             7:'brown',
             8:'magenta',
-            9:'rose',
-            10:'azure'
-            
+            9:'turquoise',
+            10:'azure',
+            11:'black',
+            12:'sienna',
+            13:'silver',
+            14:'gold',
+            15:'lightgray'
         }
         #Column wise scattering
         C1_init = int(C1_init_)
