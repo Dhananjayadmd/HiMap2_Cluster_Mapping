@@ -228,7 +228,27 @@ def main(dfg_xml, no_clusters, affinity_, no_init,number_of_cluster_rows_in_cgra
         12:'sienna',
         13:'silver',
         14:'gold',
-        15:'lightgray'
+        15:'lightgray',
+        16:'orange',
+        17:'brown',
+        18:'magenta',
+        19:'turquoise',
+        20:'azure',
+        21:'black',
+        22:'sienna',
+        23:'silver',
+        24:'gold',
+        25:'lightgray',
+        26:'orange',
+        27:'brown',
+        28:'magenta',
+        29:'turquoise',
+        30:'azure',
+        31:'black',
+        32:'sienna',
+        33:'silver',
+        34:'gold',
+        35:'lightgray'
         
     }
     i=0

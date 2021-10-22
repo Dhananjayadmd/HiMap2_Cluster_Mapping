@@ -100,7 +100,27 @@ def main(C1_init_, C2_init_, cgra_cluster_r, cgra_cluster_c):
             12:'sienna',
             13:'silver',
             14:'gold',
-            15:'lightgray'
+            15:'lightgray',
+            16:'orange',
+            17:'brown',
+            18:'magenta',
+            19:'turquoise',
+            20:'azure',
+            21:'black',
+            22:'sienna',
+            23:'silver',
+            24:'gold',
+            25:'lightgray',
+            26:'orange',
+            27:'brown',
+            28:'magenta',
+            29:'turquoise',
+            30:'azure',
+            31:'black',
+            32:'sienna',
+            33:'silver',
+            34:'gold',
+            35:'lightgray'
         }
         #Column wise scattering
         C1_init = int(C1_init_)
