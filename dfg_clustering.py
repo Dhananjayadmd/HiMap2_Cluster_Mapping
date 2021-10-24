@@ -105,7 +105,7 @@ def main(dfg_xml, no_clusters, affinity_, no_init,number_of_cluster_rows_in_cgra
     print('no_clusters affinity no_init')
     print(no_clusters, affinity_, no_init)
     print('spectral dfg clustering')
-    scdfg = SpectralClustering(int(no_clusters), affinity=str(affinity_), n_init=int(no_init))
+    scdfg = SpectralClustering(int(no_clusters), affinity=str(affinity_), n_init=int(no_init), random_state=0)
     #scdfg = SpectralClustering(7, affinity='precomputed', n_init=100)#madgwick
     #scdfg = SpectralClustering(7, affinity='precomputed', n_init=100)//aes
     #scdfg = AgglomerativeClustering(7, affinity='precomputed', linkage='average')
